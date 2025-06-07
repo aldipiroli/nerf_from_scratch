@@ -6,3 +6,4 @@ tqdm
 pyyaml
 pillow
 tensorboard
+requests
