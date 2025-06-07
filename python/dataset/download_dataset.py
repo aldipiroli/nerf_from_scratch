@@ -1,7 +1,8 @@
 import os
-import requests
 import zipfile
 from pathlib import Path
+
+import requests
 
 
 def download_tiny_nerf_dataset(data_dir="data", force_download=False):
