@@ -1,5 +1,5 @@
 from dataset.tiny_nerf_dataset import TinyNeRFDataset
-from model.nerf import TinyNerf
+from model.nerf import NeRFModel
 from model.nerf_loss import NeRFLoss
 from utils.misc import get_logger, load_config
 from utils.trainer import Trainer
@@ -12,7 +12,7 @@ def train():
     trainer = Trainer(config, logger)
 
     model_cfg = config["MODEL"]
-    model = TinyNerf(input_size=model_cfg["input_size"], output_size=model_cfg["output_size"])
+    model = NeRFModel(input_size=model_cfg["input_size"], output_size=model_cfg["output_size"])
     trainer.set_model(model)
 
     data_config = config["DATA"]

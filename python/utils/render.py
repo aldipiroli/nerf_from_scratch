@@ -69,7 +69,7 @@ def get_plane_points(v=(0, 0, 1), p=(0, 0, 0), h=1, w=1):
     v = v / torch.norm(v)
 
     v1 = get_orthogonal_vector(v)
-    v2 = torch.cross(v, v1)
+    v2 = torch.linalg.cross(v, v1)
 
     i = torch.linspace(-h / 2, h / 2, h)
     j = torch.linspace(-w / 2, w / 2, w)
@@ -126,15 +126,6 @@ def resize_image(image, target_h, target_w):
     image_resize = F.interpolate(image_, size=(target_h, target_w), mode="bilinear")
     image_resize = image_resize.squeeze(0).permute(1, 2, 0)
     return image_resize
-
-
-###########################################
-import debugpy
-
-debugpy.listen(("localhost", 6001))
-print("Waiting for debugger attach...")
-debugpy.wait_for_client()
-###########################################
 
 
 def get_rays_camera_to_plane(image, cam_center, plane, tn=1, tf=3, M=10, N=20, img_plane_h=100, img_plane_w=100):
