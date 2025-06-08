@@ -32,12 +32,12 @@ def train():
     val_dataset = TinyNeRFDataset(
         root_dir=data_config["root"],
         mode="val",
-        N=100 * 100,
+        N=data_config["img_plane_h"] * data_config["img_plane_w"],
         M=data_config["M"],
         tn=data_config["tn"],
         tf=data_config["tf"],
-        img_plane_h=100,
-        img_plane_w=100,
+        img_plane_h=data_config["img_plane_h"],
+        img_plane_w=data_config["img_plane_w"],
     )
 
     trainer.set_dataset(train_dataset, val_dataset, data_config=config["DATA"])

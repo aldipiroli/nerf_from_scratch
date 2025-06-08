@@ -125,6 +125,9 @@ class Trainer:
     def overfit_one_batch(self):
         from dataset.tiny_nerf_dataset import TinyNeRFDataset
 
+        tn = 2
+        tf = 6
+        M = 32
         train_dataset = TinyNeRFDataset(
             root_dir="../data",
             mode="val",
@@ -135,6 +138,7 @@ class Trainer:
             img_plane_h=100,
             img_plane_w=100,
         )
+        step = (tf - tn) / M
         data_loader = DataLoader(
             train_dataset,
             batch_size=1,
@@ -150,7 +154,7 @@ class Trainer:
             image_gt_colors = image_gt_colors.to(self.device)
 
             preds_color, preds_density = self.model(query_points)
-            predicted_ray_colors = get_volume_rendering(preds_color, preds_density, step=self.step)
+            predicted_ray_colors = get_volume_rendering(preds_color, preds_density, step=step)
 
             loss = self.loss_fn(image_gt_colors, predicted_ray_colors)
             loss.backward()
