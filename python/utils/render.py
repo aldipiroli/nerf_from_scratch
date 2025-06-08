@@ -9,40 +9,15 @@ import torch.nn.functional as F
 from dataset.download_dataset import download_tiny_nerf_dataset
 
 
-def cartesian_to_polar(x, y, z):
-    r = np.sqrt(x**2 + y**2 + z**2)
-    gamma = np.arccos(y / r)
-    theta = np.arctan2(z, y)
-    return r, gamma, theta
-
-
-def visualize_camera_poses(camera_poses):
-    fig = plt.figure(figsize=(10, 8))
-    ax = fig.add_subplot(111, projection="3d")
-    ax.set_box_aspect([1, 1, 1])
-
-    ax.scatter(0, 0, 0, color="black", s=100)  # object
-
-    for pose in camera_poses:
-        x, y, z, _ = pose[:, -1]
-        ax.scatter(x, y, z, color="blue")
-        ax.quiver(x, y, z, -x, -y, -z, length=0.3, normalize=True, color="red")
-
-    ax.set_xlabel("X")
-    ax.set_ylabel("Y")
-    ax.set_zlabel("Z")
-    plt.show()
-
-
 def get_sphere_points(center=(0, 0, 0), radius=1, n=20):
     # https://en.wikipedia.org/wiki/Spherical_coordinate_system
-    gamma = np.linspace(0, 2 * np.pi, n)
-    theta = np.linspace(0, np.pi, n)
-    gamma_m, theta_m = np.meshgrid(gamma, theta)
+    gamma = torch.linspace(0, 2 * torch.pi, n)
+    theta = torch.linspace(0, torch.pi, n)
+    gamma_m, theta_m = torch.meshgrid(gamma, theta)
 
-    x = radius * np.sin(theta_m) * np.cos(gamma_m) + center[0]
-    y = radius * np.sin(theta_m) * np.sin(gamma_m) + center[1]
-    z = radius * np.cos(theta_m) + center[2]
+    x = radius * torch.sin(theta_m) * torch.cos(gamma_m) + center[0]
+    y = radius * torch.sin(theta_m) * torch.sin(gamma_m) + center[1]
+    z = radius * torch.cos(theta_m) + center[2]
     return x, y, z
 
 
@@ -128,17 +103,25 @@ def resize_image(image, target_h, target_w):
     return image_resize
 
 
-def get_rays_camera_to_plane(image, cam_center, plane, tn=1, tf=3, M=10, N=20, img_plane_h=100, img_plane_w=100):
+def get_rays_camera_to_plane(
+    image, cam_center, plane, tn=1, tf=3, M=10, N=20, img_plane_h=100, img_plane_w=100, mode="train"
+):
     # Sample N plane points
     x, y, z = plane
     all_plane_points = torch.stack((x, y, z), dim=-1).reshape(-1, 3)  # (n_points, 3) plane points
     random_indices = torch.randperm(all_plane_points.shape[0])[:N]
-    plane_points = all_plane_points[random_indices]  # (N, 3)
+    if mode == "train":
+        plane_points = all_plane_points[random_indices]  # (N, 3)
+    else:
+        plane_points = all_plane_points[:N]
 
     image_resize = resize_image(image, target_h=img_plane_h, target_w=img_plane_w)
     image_resize = image_resize.reshape(-1, 3)
     assert image_resize.shape == all_plane_points.shape
-    image_gt_colors = image_resize[random_indices]
+    if mode == "train":
+        image_gt_colors = image_resize[random_indices]
+    else:
+        image_gt_colors = image_resize[:N]
 
     # Query points
     all_ray_queries = []
@@ -153,7 +136,7 @@ def get_rays_camera_to_plane(image, cam_center, plane, tn=1, tf=3, M=10, N=20, i
     return all_ray_queries, image_gt_colors
 
 
-def camera_ray_query(cam_pose, image, N=10, M=20, tn=1, tf=3, img_plane_h=100, img_plane_w=100):
+def camera_ray_query(cam_pose, image, N=10, M=20, tn=1, tf=3, img_plane_h=100, img_plane_w=100, mode="train"):
     center = torch.tensor([0, 0, 0])
     cam_center = torch.tensor(cam_pose[:3, -1])
     v = get_unit_vector(start=cam_center, end=center)
@@ -168,6 +151,7 @@ def camera_ray_query(cam_pose, image, N=10, M=20, tn=1, tf=3, img_plane_h=100, i
         M=M,
         img_plane_h=img_plane_h,
         img_plane_w=img_plane_w,
+        mode=mode,
     )
     query_points = query_points.float()
     image_gt_colors = image_gt_colors.float()
@@ -175,9 +159,9 @@ def camera_ray_query(cam_pose, image, N=10, M=20, tn=1, tf=3, img_plane_h=100, i
 
 
 def plot_camera_ray_query(cam_pose):
-    center = np.array([0, 0, 0])
+    center = torch.tensor([0, 0, 0])
     batch_id = 0
-    cam_center = np.array(cam_pose[batch_id, :3, -1])
+    cam_center = torch.tensor(cam_pose[batch_id, :3, -1])
     fig = plt.figure(figsize=(10, 8))
     ax = fig.add_subplot(111, projection="3d")
 
@@ -188,9 +172,14 @@ def plot_camera_ray_query(cam_pose):
     plot_point(ax, p=cam_center)  # camera pos
     draw_vector_start_end(ax, start=cam_center, end=center)  # principal dir
     v = get_unit_vector(start=cam_center, end=center)
-    x, y, z = get_plane_points(v=v, p=v)  # image plane
-    # draw_surface(ax, x, y, z)
-    query_points = get_rays_camera_to_plane(ax, cam_center, plane=(x, y, z))
+    x, y, z = get_plane_points(v=v, p=v, h=5, w=5)  # image plane
+    draw_surface(ax, x, y, z)
+    image = torch.zeros(5, 5, 3)
+    all_ray_queries, _ = get_rays_camera_to_plane(
+        image, cam_center, plane=(x, y, z), tn=1, tf=3, M=10, N=20, img_plane_h=5, img_plane_w=5
+    )
+    for p in all_ray_queries.reshape(-1, 6):
+        plot_point(ax, p[:3])
 
     ax.set_xlabel("X")
     ax.set_ylabel("Y")
@@ -223,4 +212,4 @@ def get_volume_rendering(color, density, step=0.1):
 if __name__ == "__main__":
     data_path = download_tiny_nerf_dataset()
     data = np.load(data_path)
-    camera_ray_query(data["poses"][2:3])
+    plot_camera_ray_query(torch.tensor(data["poses"][2:3]))

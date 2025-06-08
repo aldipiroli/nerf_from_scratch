@@ -4,16 +4,16 @@ IMG_OUT_DIR: "../artifacts/img"
 MODEL:
   input_size: 6
   output_size: 4
-  embed_size: 256
+  embed_size: 64
 DATA:
   root: "../data"
-  batch_size: 2
-  N: 10 # num points in image plane
-  M: 20 # num query points per ray
-  tn: 1 # near distance ray
-  tf: 3 # far distance ray
-  img_plane_h: 50
-  img_plane_w: 50
+  batch_size: 8
+  N: 100 # num points in image plane
+  M: 32 # num query points per ray
+  tn: 2 # near distance ray
+  tf: 6 # far distance ray
+  img_plane_h: 100
+  img_plane_w: 100
 OPTIM:
   optimizer: "AdamW"
   lr: 0.0001

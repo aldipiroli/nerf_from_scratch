@@ -2,6 +2,7 @@ import logging
 import os
 from datetime import datetime
 
+import matplotlib.pyplot as plt
 import torch
 import yaml
 
@@ -34,3 +35,19 @@ def get_logger(log_dir):
         ch.setFormatter(formatter)
         logger.addHandler(ch)
     return logger
+
+
+def plot_images(images_list, filename="tmp.png", curr_iter=0):
+    num_images = len(images_list)
+    fig, axs = plt.subplots(num_images, 1, figsize=(5, num_images * 3))
+    for i, tensor in enumerate(images_list):
+        axs[i].imshow(tensor.detach().cpu())
+        axs[i].axis("off")
+
+    plt.tight_layout()
+    plt.subplots_adjust(top=0.9)
+    current_datetime = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    fig.suptitle(f"iter {curr_iter} - {current_datetime}")
+    plt.savefig(filename, format="png", bbox_inches="tight")
+    print(f"Saved figure {filename}")
+    plt.close()

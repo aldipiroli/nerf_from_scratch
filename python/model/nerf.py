@@ -3,7 +3,7 @@ import torch.nn as nn
 
 
 class NeRFModel(nn.Module):
-    def __init__(self, input_size=6, output_size=4, embed_size=256, num_encode_layers=8):
+    def __init__(self, input_size=6, output_size=4, embed_size=64, num_encode_layers=4):
         super(NeRFModel, self).__init__()
 
         self.encoder = nn.Sequential(

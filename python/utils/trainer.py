@@ -3,7 +3,7 @@ from pathlib import Path
 import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from utils.misc import get_device
+from utils.misc import get_device, plot_images
 from utils.render import get_volume_rendering
 
 
@@ -19,6 +19,7 @@ class Trainer:
         self.device = get_device()
         self.artifacts_img_dir = Path(config["IMG_OUT_DIR"])
         self.artifacts_img_dir.mkdir(parents=True, exist_ok=True)
+        self.step = (config["DATA"]["tf"] - config["DATA"]["tn"]) / config["DATA"]["M"]
 
     def set_model(self, model):
         self.model = model
@@ -100,7 +101,8 @@ class Trainer:
         for curr_epoch in range(self.optim_config["num_epochs"]):
             self.epoch = curr_epoch
             self.train_one_epoch()
-            self.evaluate_model()
+            if (curr_epoch + 1) % 5 == 0:
+                self.evaluate_model()
 
     def train_one_epoch(self):
         self.model.train()
@@ -111,7 +113,7 @@ class Trainer:
                 image_gt_colors = image_gt_colors.to(self.device)
 
                 preds_color, preds_density = self.model(query_points)
-                predicted_ray_colors = get_volume_rendering(preds_color, preds_density)
+                predicted_ray_colors = get_volume_rendering(preds_color, preds_density, step=self.step)
 
                 loss = self.loss_fn(image_gt_colors, predicted_ray_colors)
                 loss.backward()
@@ -120,10 +122,62 @@ class Trainer:
                 pbar.set_postfix({"loss": loss.item()})
         self.save_checkpoint()
 
-    def evaluate_model(self):
+    def overfit_one_batch(self):
+        from dataset.tiny_nerf_dataset import TinyNeRFDataset
+
+        train_dataset = TinyNeRFDataset(
+            root_dir="../data",
+            mode="val",
+            N=100 * 100,
+            M=32,
+            tn=2,
+            tf=6,
+            img_plane_h=100,
+            img_plane_w=100,
+        )
+        data_loader = DataLoader(
+            train_dataset,
+            batch_size=1,
+            shuffle=False,
+        )
+        self.model.train()
+        data_iter = iter(data_loader)
+        query_points, image_gt_colors = next(data_iter)
+
+        for i in range(1000000):
+            self.optimizer.zero_grad()
+            query_points = query_points.to(self.device)
+            image_gt_colors = image_gt_colors.to(self.device)
+
+            preds_color, preds_density = self.model(query_points)
+            predicted_ray_colors = get_volume_rendering(preds_color, preds_density, step=self.step)
+
+            loss = self.loss_fn(image_gt_colors, predicted_ray_colors)
+            loss.backward()
+            self.optimizer.step()
+            print(f"iter {i}, loss {loss}")
+
+            if i % 25 == 0:
+                pred = predicted_ray_colors[0].reshape(100, 100, 3)
+                gt = image_gt_colors[0].reshape(100, 100, 3)
+                plot_images([pred, gt], filename=f"{self.artifacts_img_dir}/img.png", curr_iter=i)
+
+    def evaluate_model(self, max_num_samples=3):
         self.logger.info("Running Evaluation...")
         self.model.eval()
-        return
+        for i, (query_points, image_gt_colors) in enumerate(self.val_loader):
+            if i > max_num_samples:
+                break
+            query_points = query_points.to(self.device)
+            image_gt_colors = image_gt_colors.to(self.device)
+            preds_color, preds_density = self.model(query_points)
+            predicted_ray_colors = get_volume_rendering(preds_color, preds_density, step=self.step)
+            loss = self.loss_fn(image_gt_colors, predicted_ray_colors)
+
+            pred = predicted_ray_colors[0].reshape(100, 100, 3)
+            gt = image_gt_colors[0].reshape(100, 100, 3)
+            plot_images([pred, gt], filename=f"{self.artifacts_img_dir}/img_{str(i).zfill(3)}.png")
+            print(f"Validation loss: {loss}")
 
     def gradient_sanity_check(self):
         total_gradient = 0
