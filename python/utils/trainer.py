@@ -105,20 +105,20 @@ class Trainer:
     def train_one_epoch(self):
         self.model.train()
         with tqdm(enumerate(self.train_loader), desc=f"Epoch {self.epoch}") as pbar:
-            for n_iter, (image, cam_pose, query_points) in pbar:
+            for n_iter, (query_points, image_gt_colors) in pbar:
                 self.optimizer.zero_grad()
                 query_points = query_points.to(self.device)
+                image_gt_colors = image_gt_colors.to(self.device)
 
                 preds_color, preds_density = self.model(query_points)
-                preds_color = preds_color.detach().to("cpu").numpy()
-                preds_density = preds_density.detach().to("cpu").numpy()
-                get_volume_rendering(preds_color, preds_density)
-                # loss = self.loss_fn(target, predictions)
-                # loss.backward()
-                # self.optimizer.step()
-                # self.scheduler.step()
-                # pbar.set_postfix({"loss": loss.item()})
-        # self.save_checkpoint()
+                predicted_ray_colors = get_volume_rendering(preds_color, preds_density)
+
+                loss = self.loss_fn(image_gt_colors, predicted_ray_colors)
+                loss.backward()
+                self.optimizer.step()
+                self.scheduler.step()
+                pbar.set_postfix({"loss": loss.item()})
+        self.save_checkpoint()
 
     def evaluate_model(self):
         self.logger.info("Running Evaluation...")

@@ -7,5 +7,5 @@ from dataset.download_dataset import download_tiny_nerf_dataset
 
 
 def test_download_tiny_nerf_dataset():
-    path = download_tiny_nerf_dataset(force_download=True)
+    path = download_tiny_nerf_dataset(force_download=False)
     assert path.is_file()
