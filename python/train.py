@@ -15,8 +15,29 @@ def train():
     model = TinyNerf(input_size=model_cfg["input_size"], output_size=model_cfg["output_size"])
     trainer.set_model(model)
 
-    train_dataset = TinyNeRFDataset(root_dir=config["DATA"]["root"], split="train")
-    val_dataset = TinyNeRFDataset(root_dir=config["DATA"]["root"], split="val")
+    data_config = config["DATA"]
+    train_dataset = TinyNeRFDataset(
+        root_dir=data_config["root"],
+        split="train",
+        N=data_config["N"],
+        M=data_config["M"],
+        tn=data_config["tn"],
+        tf=data_config["tf"],
+        img_plane_h=data_config["img_plane_h"],
+        img_plane_w=data_config["img_plane_w"],
+    )
+
+    val_dataset = TinyNeRFDataset(
+        root_dir=data_config["root"],
+        split="val",
+        N=data_config["N"],
+        M=data_config["M"],
+        tn=data_config["tn"],
+        tf=data_config["tf"],
+        img_plane_h=data_config["img_plane_h"],
+        img_plane_w=data_config["img_plane_w"],
+    )
+
     trainer.set_dataset(train_dataset, val_dataset, data_config=config["DATA"])
     trainer.set_optimizer(optim_config=config["OPTIM"])
     trainer.set_loss_function(loss_fn=NeRFLoss())
