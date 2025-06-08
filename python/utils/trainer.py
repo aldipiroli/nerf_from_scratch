@@ -4,6 +4,7 @@ import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from utils.misc import get_device
+from utils.render import get_volume_rendering
 
 
 class Trainer:
@@ -109,6 +110,9 @@ class Trainer:
                 query_points = query_points.to(self.device)
 
                 preds_color, preds_density = self.model(query_points)
+                preds_color = preds_color.detach().to("cpu").numpy()
+                preds_density = preds_density.detach().to("cpu").numpy()
+                get_volume_rendering(preds_color, preds_density)
                 # loss = self.loss_fn(target, predictions)
                 # loss.backward()
                 # self.optimizer.step()

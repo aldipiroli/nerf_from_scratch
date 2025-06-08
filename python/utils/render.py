@@ -176,6 +176,27 @@ def plot_camera_ray_query(cam_pose):
     plt.show()
 
 
+def get_transmittance(step, density, target_step):
+    sum_val = np.sum(density[:, :, :target_step] * step, axis=2)
+    trans = np.exp(-sum_val)
+    return trans
+
+
+def get_volume_rendering(color, density, step=0.1):
+    # Eq. 3 https://arxiv.org/pdf/2003.08934
+    b, N, M, _ = color.shape
+    total_ray_color = []
+    for i in range(M):
+        alpha_i = 1 - np.exp(-density[:, :, i] * step)
+        trans_i = get_transmittance(step, density, target_step=i)
+        ray_color_i = trans_i * alpha_i * color[:, :, i]
+        total_ray_color.append(ray_color_i)
+
+    total_ray_color = np.array(total_ray_color)
+    total_ray_color = np.sum(total_ray_color, 0)
+    return total_ray_color
+
+
 if __name__ == "__main__":
     data_path = download_tiny_nerf_dataset()
     data = np.load(data_path)
