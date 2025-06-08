@@ -44,7 +44,7 @@ def train():
     trainer.set_optimizer(optim_config=config["OPTIM"])
     trainer.set_loss_function(loss_fn=NeRFLoss())
     trainer.save_checkpoint()
-    trainer.overfit_one_batch()
+    # trainer.overfit_one_batch()
     trainer.train()
 
 

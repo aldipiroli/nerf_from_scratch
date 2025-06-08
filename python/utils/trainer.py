@@ -97,12 +97,13 @@ class Trainer:
         self.loss_fn = loss_fn.to(self.device)
         self.logger.info(f"Loss function {self.loss_fn}")
 
-    def train(self):
+    def train(self, eval_every=10):
         for curr_epoch in range(self.optim_config["num_epochs"]):
             self.epoch = curr_epoch
             self.train_one_epoch()
-            if (curr_epoch + 1) % 5 == 0:
+            if (curr_epoch + 1) % eval_every == 0:
                 self.evaluate_model()
+                self.save_checkpoint()
 
     def train_one_epoch(self):
         self.model.train()
@@ -120,7 +121,7 @@ class Trainer:
                 self.optimizer.step()
                 self.scheduler.step()
                 pbar.set_postfix({"loss": loss.item()})
-        self.save_checkpoint()
+        # self.save_checkpoint()
 
     def overfit_one_batch(self):
         from dataset.tiny_nerf_dataset import TinyNeRFDataset
@@ -180,7 +181,7 @@ class Trainer:
 
             pred = predicted_ray_colors[0].reshape(100, 100, 3)
             gt = image_gt_colors[0].reshape(100, 100, 3)
-            plot_images([pred, gt], filename=f"{self.artifacts_img_dir}/img_{str(i).zfill(3)}.png")
+            plot_images([pred, gt], filename=f"{self.artifacts_img_dir}/img_{str(i).zfill(3)}.png", curr_iter=i)
             print(f"Validation loss: {loss}")
 
     def gradient_sanity_check(self):
