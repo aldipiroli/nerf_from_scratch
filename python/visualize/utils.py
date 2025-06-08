@@ -44,45 +44,90 @@ def draw_sphere(center=(0, 0, 0), radius=1, n=20):
     return x, y, z
 
 
-def draw_plane(v=(0, 0, 1), p=(0, 0, 1)):
-    # https://mathworld.wolfram.com/Plane.html
-    a, b, c = v[0], v[1], v[2]
-    d = a * p[0] + b * p[1] + c * p[2]
+def get_orthogonal_vectors(v):
+    if v[0] != 0 or v[1] != 0:
+        u = np.array([0, 0, 1])
+    else:
+        u = np.array([0, 1, 0])
+    orthogonal = np.cross(v, u)
 
-    x = np.linspace(-2, 2, 10)
-    y = np.linspace(-2, 2, 10)
-    x, y = np.meshgrid(x, y)
-    z = 1 / c * (d - a * x - b * y)
-
-    return x, y, z
+    dot = np.dot(v, orthogonal)
+    assert np.isclose(dot, 0)
+    return orthogonal
 
 
-def draw_vector(ax, start, end, color="r"):
+def draw_plane(ax, v=(0, 0, 1), p=(0, 0, 0), h=1, w=1):
+    v = np.array(v, dtype=float)
+    p = np.array(p, dtype=float)
+    v = v / np.linalg.norm(v)
+
+    v1 = get_orthogonal_vectors(v)
+    v2 = np.cross(v, v1)
+    assert np.isclose(np.dot(v2, v), 0)
+
+    i = np.linspace(-h / 2, h / 2, 10)
+    j = np.linspace(-w / 2, w / 2, 10)
+    ii, jj = np.meshgrid(i, j)
+    points = ii[:, :, None] * v1[None, None, :] + jj[:, :, None] * v2[None, None, :] + p[None, None, :]
+
+    x = points[:, :, 0]
+    y = points[:, :, 1]
+    z = points[:, :, 2]
+    ax.plot_surface(x, y, z, alpha=0.5)
+    return ax
+
+
+def get_unit_vector(start, end):
+    vec = end - start
+    norm = np.linalg.norm(vec)
+    vec_norm = vec / norm
+    vec_unit = start + vec_norm
+    return vec_unit
+
+
+def draw_vector_start_end(ax, start, end, color="r", unit_vector=True):
+    if unit_vector:
+        end = get_unit_vector(start, end)
+
     ax.plot([start[0], end[0]], [start[1], end[1]], [start[2], end[2]], color=color)
     ax.plot(end[0], end[1], end[2], marker="D", color=color)
     return ax
 
 
-def visualize_plane():
+def plot_point(ax, p, color="b"):
+    ax.plot(p[0], p[1], p[2], marker="o", color=color)
+    return ax
+
+
+def get_vector_from_points(a, b, normalize=True):
+    v = b - a
+    return v
+
+
+def vis_camera_poses(data):
+    center = [0, 0, 0]
     fig = plt.figure(figsize=(10, 8))
     ax = fig.add_subplot(111, projection="3d")
 
-    # x, y, z = draw_plane()
-    # ax.plot_surface(x, y, z)
-
-    ax = draw_vector(ax=ax, start=(1.5, 0, 0), end=(2, 0, 0))
-    x, y, z = draw_sphere()
+    # object
+    x, y, z = draw_sphere(center=(0, 0, 0), radius=0.1)
     ax.plot_surface(x, y, z)
+
+    # cameras
+    for cam in data:
+        ax = plot_point(ax, p=(cam[:3, -1]))  # camera pos
+        ax = draw_vector_start_end(ax, start=cam[:3, -1], end=center)  # principal dir
+        v = get_unit_vector(start=cam[:3, -1], end=center)
+        ax = draw_plane(ax, v, v)
 
     ax.set_xlabel("X")
     ax.set_ylabel("Y")
     ax.set_zlabel("Z")
     ax.set_aspect("equal")
-
     plt.show()
 
 
 if __name__ == "__main__":
     data_path = download_tiny_nerf_dataset()
     data = np.load(data_path)
-    visualize_plane()
+    vis_camera_poses(data["poses"][2:3])
