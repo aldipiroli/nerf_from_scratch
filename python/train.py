@@ -25,19 +25,19 @@ def train():
         M=data_config["M"],
         tn=data_config["tn"],
         tf=data_config["tf"],
-        img_plane_h=data_config["img_plane_h"],
-        img_plane_w=data_config["img_plane_w"],
+        H=data_config["H"],
+        W=data_config["W"],
     )
 
     val_dataset = TinyNeRFDataset(
         root_dir=data_config["root"],
         mode="val",
-        N=data_config["img_plane_h"] * data_config["img_plane_w"],
+        N=data_config["N"],
         M=data_config["M"],
         tn=data_config["tn"],
         tf=data_config["tf"],
-        img_plane_h=data_config["img_plane_h"],
-        img_plane_w=data_config["img_plane_w"],
+        H=data_config["H"],
+        W=data_config["W"],
     )
 
     trainer.set_dataset(train_dataset, val_dataset, data_config=config["DATA"])

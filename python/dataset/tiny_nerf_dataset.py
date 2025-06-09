@@ -4,11 +4,11 @@ import numpy as np
 import torch
 from dataset.download_dataset import download_tiny_nerf_dataset
 from torch.utils.data import Dataset
-from utils.render import camera_ray_query
+from utils.render import get_ray_vectors, sample_ray_vecotrs
 
 
 class TinyNeRFDataset(Dataset):
-    def __init__(self, root_dir, mode="train", N=10, M=20, tn=1, tf=3, img_plane_h=100, img_plane_w=100):
+    def __init__(self, root_dir, mode="train", N=10, M=20, tn=1, tf=3, H=100, W=100):
         self.root_dir = Path(root_dir)
         self.mode = mode
         download_tiny_nerf_dataset(data_dir=self.root_dir)
@@ -16,13 +16,14 @@ class TinyNeRFDataset(Dataset):
 
         self.images = torch.tensor(data["images"])
         self.poses = torch.tensor(data["poses"])
+        self.focal = torch.tensor(data["focal"])
         self.N_train = 100
         self.N = N
         self.M = M
         self.tn = tn
         self.tf = tf
-        self.img_plane_h = img_plane_h
-        self.img_plane_w = img_plane_w
+        self.H = H
+        self.W = W
 
         if mode == "train":
             self.images = self.images[: self.N_train]
@@ -35,15 +36,9 @@ class TinyNeRFDataset(Dataset):
         return len(self.images)
 
     def __getitem__(self, idx):
-        query_points, image_gt_colors = camera_ray_query(
-            self.poses[idx],
-            image=self.images[idx],
-            N=self.N,
-            M=self.M,
-            tn=self.tn,
-            tf=self.tf,
-            img_plane_h=self.img_plane_h,
-            img_plane_w=self.img_plane_w,
-            mode=self.mode,
+        dirs, origin = get_ray_vectors(self.poses[idx], self.focal, H=self.H, W=self.W)
+        all_ray_queries, (samples_i, samples_j) = sample_ray_vecotrs(
+            dirs, origin, N=self.N, M=self.M, tn=self.tn, tf=self.tf, H=self.H, W=self.W, mode=self.mode
         )
-        return query_points, image_gt_colors
+        image_gt_colors = self.images[idx][samples_i, samples_j]
+        return all_ray_queries, image_gt_colors

@@ -97,9 +97,10 @@ class Trainer:
         self.loss_fn = loss_fn.to(self.device)
         self.logger.info(f"Loss function {self.loss_fn}")
 
-    def train(self, eval_every=10):
+    def train(self, eval_every=50):
         for curr_epoch in range(self.optim_config["num_epochs"]):
             self.epoch = curr_epoch
+
             self.train_one_epoch()
             if (curr_epoch + 1) % eval_every == 0:
                 self.evaluate_model()
@@ -136,8 +137,8 @@ class Trainer:
             M=32,
             tn=2,
             tf=6,
-            img_plane_h=100,
-            img_plane_w=100,
+            H=100,
+            W=100,
         )
         step = (tf - tn) / M
         data_loader = DataLoader(

@@ -7,13 +7,13 @@ MODEL:
   embed_size: 64
 DATA:
   root: "../data"
-  batch_size: 8
+  batch_size: 64
   N: 100 # num points in image plane
   M: 32 # num query points per ray
   tn: 2 # near distance ray
   tf: 6 # far distance ray
-  img_plane_h: 100
-  img_plane_w: 100
+  H: 100
+  W: 100
 OPTIM:
   optimizer: "AdamW"
   lr: 0.01
