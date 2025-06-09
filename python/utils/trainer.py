@@ -123,7 +123,6 @@ class Trainer:
                 self.optimizer.step()
                 self.scheduler.step()
                 pbar.set_postfix({"loss": loss.item()})
-        # self.save_checkpoint()
 
     def overfit_one_batch(self):
         from dataset.tiny_nerf_dataset import TinyNeRFDataset
