@@ -36,7 +36,6 @@ class Trainer:
                 "epoch": self.epoch,
                 "model_state_dict": self.model.state_dict(),
                 "optimizer_state_dict": self.optimizer.state_dict(),
-                "scheduler_state_dict": self.scheduler.state_dict(),
             },
             model_path,
         )
@@ -58,7 +57,6 @@ class Trainer:
         checkpoint = torch.load(latest_ckpt, weights_only=False)
         self.model.load_state_dict(checkpoint["model_state_dict"])
         self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
-        self.scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
         self.epoch = checkpoint.get("epoch", 0)
         return latest_ckpt
 
