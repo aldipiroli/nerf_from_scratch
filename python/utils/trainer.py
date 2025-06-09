@@ -12,6 +12,7 @@ class Trainer:
         self.config = config
         self.logger = logger
         self.epoch = 0
+        self.total_iters = 0
         self.pred_threshold = 0.5
 
         self.ckpt_dir = Path(config["CKPT_DIR"])
@@ -83,12 +84,6 @@ class Trainer:
         self.optim_config = optim_config
         if self.optim_config["optimizer"] == "AdamW":
             self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=self.optim_config["lr"])
-
-            self.scheduler = torch.optim.lr_scheduler.StepLR(
-                self.optimizer,
-                step_size=self.optim_config.get("step_size", self.optim_config["weight_decay_step"]),
-                gamma=self.optim_config.get("gamma", self.optim_config["weight_decay"]),
-            )
         else:
             raise ValueError("Unknown optimizer")
 
@@ -121,8 +116,8 @@ class Trainer:
                 loss = self.loss_fn(image_gt_colors, predicted_ray_colors)
                 loss.backward()
                 self.optimizer.step()
-                self.scheduler.step()
-                pbar.set_postfix({"loss": loss.item()})
+                self.total_iters += 1
+                pbar.set_postfix({"total_iters": self.total_iters, "loss": loss.item()})
 
     def overfit_one_batch(self):
         from dataset.tiny_nerf_dataset import TinyNeRFDataset
