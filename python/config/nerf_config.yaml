@@ -7,8 +7,8 @@ MODEL:
   embed_size: 64
 DATA:
   root: "../data"
-  batch_size: 64
-  N: 100 # num points in image plane
+  batch_size: 8
+  N: 1000 # num points in image plane
   M: 32 # num query points per ray
   tn: 2 # near distance ray
   tf: 6 # far distance ray
@@ -20,3 +20,4 @@ OPTIM:
   weight_decay: 0.0001
   weight_decay_step: 50
   num_epochs: 100000
+  eval_every: 5

@@ -20,6 +20,7 @@ class Trainer:
         self.artifacts_img_dir = Path(config["IMG_OUT_DIR"])
         self.artifacts_img_dir.mkdir(parents=True, exist_ok=True)
         self.step = (config["DATA"]["tf"] - config["DATA"]["tn"]) / config["DATA"]["M"]
+        self.eval_every = config["OPTIM"]["eval_every"]
 
     def set_model(self, model):
         self.model = model
@@ -97,12 +98,12 @@ class Trainer:
         self.loss_fn = loss_fn.to(self.device)
         self.logger.info(f"Loss function {self.loss_fn}")
 
-    def train(self, eval_every=10):
+    def train(self):
         for curr_epoch in range(self.optim_config["num_epochs"]):
             self.epoch = curr_epoch
 
             self.train_one_epoch()
-            if (curr_epoch + 1) % eval_every == 0:
+            if (curr_epoch + 1) % self.eval_every == 0:
                 self.evaluate_model()
                 self.save_checkpoint()
 
