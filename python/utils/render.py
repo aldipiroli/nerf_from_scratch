@@ -190,6 +190,7 @@ def sample_ray_vecotrs(dirs, origin, N=100, M=20, tn=2, tf=6, H=100, W=100, mode
     all_ray_queries = []
     for d in dirs_sampled:
         queries_dir = []
+        d = d / torch.norm(d)
         for t in torch.arange(tn, tf, t_step):
             query = origin + t * d
             queries_dir.append(torch.cat([query, d], -1))
