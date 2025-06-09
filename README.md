@@ -13,3 +13,7 @@ python train.py
 ```
 
 > Note: this repository is just for learning purposes and does not aim at the performance of the [original repository](https://github.com/bmild/nerf). Additionally, some features from the original model are not implemented.
+
+### Examples
+#### Ray queries
+![](imgs/ray_sampling.png)
