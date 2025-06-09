@@ -97,7 +97,7 @@ class Trainer:
         self.loss_fn = loss_fn.to(self.device)
         self.logger.info(f"Loss function {self.loss_fn}")
 
-    def train(self, eval_every=50):
+    def train(self, eval_every=10):
         for curr_epoch in range(self.optim_config["num_epochs"]):
             self.epoch = curr_epoch
 

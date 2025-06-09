@@ -89,10 +89,10 @@ def get_vector_from_points(a, b, normalize=False):
     return v
 
 
-def draw_parametric_vector(ax, start, v, t, color="g"):
+def draw_parametric_vector(ax, start, v, t, color="lightgray"):
     end = start + t * v
     ax.plot([start[0], end[0]], [start[1], end[1]], [start[2], end[2]], color=color, alpha=0.5)
-    ax.plot(end[0], end[1], end[2], marker="D", color="r", alpha=0.3)
+    # ax.plot(end[0], end[1], end[2], marker="o", color="r", alpha=0.3)
 
 
 def resize_image(image, target_h, target_w):
@@ -199,15 +199,27 @@ def sample_ray_vecotrs(dirs, origin, N=100, M=20, tn=2, tf=6, H=100, W=100, mode
     return all_ray_queries, (samples_i, samples_j)
 
 
-def plot_ray_vectors(dirs, origin, N=100):
+def plot_ray_vectors(
+    dirs,
+    origin,
+    all_ray_queries,
+    N=25,
+    M=10,
+    tn=2,
+    tf=6,
+):
     fig = plt.figure(figsize=(10, 8))
     ax = fig.add_subplot(111, projection="3d")
     reshaped_dirs = dirs.reshape(-1, 3)
-    random_dirs = reshaped_dirs[np.random.choice(reshaped_dirs.shape[0], N, replace=False)]
-    for dir in random_dirs:
-        draw_parametric_vector(ax, origin, dir, 5, color="g")
 
-    ax.scatter(0, 0, 0, color="k", s=100)
+    ax.plot(origin[0], origin[1], origin[2], marker="o", color="r", alpha=1, markersize=10, label="Camera")
+    ax.plot(0, 0, 0, marker="o", color="k", alpha=1, markersize=50, label="Object")
+
+    for dir in reshaped_dirs:
+        draw_parametric_vector(ax, origin, dir, tf, color="green")
+    all_ray_queries = all_ray_queries.reshape(-1, 6)
+    ax.scatter(all_ray_queries[:, 0], all_ray_queries[:, 1], all_ray_queries[:, 2])
+
     ax.set_xlabel("X")
     ax.set_ylabel("Y")
     ax.set_zlabel("Z")
@@ -271,7 +283,19 @@ if __name__ == "__main__":
     poses = torch.tensor(data["poses"][2])
     focal = torch.tensor(data["focal"])
     image = torch.tensor(data["images"][2])
+    N = 10
+    M = 10
+    tn = 2
+    tf = 6
     dirs, origin = get_ray_vectors(poses, focal, H=100, W=100)
-    plot_ray_vectors(dirs, origin, N=100)
-    all_ray_queries, (samples_i, samples_j) = sample_ray_vecotrs(dirs, origin, N=100, M=20, tn=2, tf=6, mode="val")
+    all_ray_queries, (samples_i, samples_j) = sample_ray_vecotrs(dirs, origin, N=N, M=M, tn=tn, tf=tf, mode="train")
+    plot_ray_vectors(
+        dirs[samples_i, samples_j],
+        origin,
+        all_ray_queries,
+        N=N,
+        M=M,
+        tn=tn,
+        tf=tf,
+    )
     image_sampled = image[samples_i, samples_j]
