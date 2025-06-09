@@ -168,7 +168,7 @@ def get_ray_vectors(
     z = -torch.ones_like(x)
 
     dirs = torch.stack((x, y, z), -1)
-    dirs = dirs @ cam_pose[:3, :3]  # cam2word tramspfr,
+    dirs = dirs @ cam_pose[:3, :3].T  # cam2word
 
     origin = cam_pose[:3, -1]
     return dirs, origin
@@ -199,11 +199,15 @@ def sample_ray_vecotrs(dirs, origin, N=100, M=20, tn=2, tf=6, H=100, W=100, mode
     return all_ray_queries, (samples_i, samples_j)
 
 
-def plot_ray_vectors(dirs, origin):
+def plot_ray_vectors(dirs, origin, N=100):
     fig = plt.figure(figsize=(10, 8))
     ax = fig.add_subplot(111, projection="3d")
-    for dir in dirs.reshape(-1, 3)[:100]:
+    reshaped_dirs = dirs.reshape(-1, 3)
+    random_dirs = reshaped_dirs[np.random.choice(reshaped_dirs.shape[0], N, replace=False)]
+    for dir in random_dirs:
         draw_parametric_vector(ax, origin, dir, 5, color="g")
+
+    ax.scatter(0, 0, 0, color="k", s=100)
     ax.set_xlabel("X")
     ax.set_ylabel("Y")
     ax.set_zlabel("Z")
@@ -268,5 +272,6 @@ if __name__ == "__main__":
     focal = torch.tensor(data["focal"])
     image = torch.tensor(data["images"][2])
     dirs, origin = get_ray_vectors(poses, focal, H=100, W=100)
-    all_ray_queries, (samples_i, samples_j) = sample_ray_vecotrs(dirs, origin, N=100, M=20, tn=2, tf=6, mode="train")
+    plot_ray_vectors(dirs, origin, N=100)
+    all_ray_queries, (samples_i, samples_j) = sample_ray_vecotrs(dirs, origin, N=100, M=20, tn=2, tf=6, mode="val")
     image_sampled = image[samples_i, samples_j]
