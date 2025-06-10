@@ -4,7 +4,7 @@ IMG_OUT_DIR: "../artifacts/img"
 MODEL:
   input_size: 6
   output_size: 4
-  embed_size: 64
+  embed_size: 256
 DATA:
   root: "../data"
   batch_size: 1
