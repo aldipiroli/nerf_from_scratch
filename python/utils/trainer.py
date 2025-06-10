@@ -13,7 +13,6 @@ class Trainer:
         self.logger = logger
         self.epoch = 0
         self.total_iters = 0
-        self.pred_threshold = 0.5
 
         self.ckpt_dir = Path(config["CKPT_DIR"])
         self.ckpt_dir.mkdir(parents=True, exist_ok=True)
@@ -54,7 +53,7 @@ class Trainer:
         latest_ckpt = max(ckpt_files, key=lambda x: int(x.stem.split("_")[1]))
         self.logger.info(f"Loading checkpoint: {latest_ckpt}")
 
-        checkpoint = torch.load(latest_ckpt, weights_only=False)
+        checkpoint = torch.load(latest_ckpt, weights_only=False, map_location=torch.device("cpu"))
         self.model.load_state_dict(checkpoint["model_state_dict"])
         self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
         self.epoch = checkpoint.get("epoch", 0)

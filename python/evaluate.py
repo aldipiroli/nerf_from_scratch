@@ -21,7 +21,7 @@ def evaluate(ckpt_path):
     )
     model = model.to(device)
 
-    checkpoint = torch.load(ckpt_path, weights_only=True)
+    checkpoint = torch.load(ckpt_path, weights_only=True, map_location=torch.device("cpu"))
     model.load_state_dict(checkpoint["model_state_dict"])
     model.eval()
     logger.info(f"Loaded Model: {ckpt_path}")
