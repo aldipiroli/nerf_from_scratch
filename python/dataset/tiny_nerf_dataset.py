@@ -14,8 +14,8 @@ class TinyNeRFDataset(Dataset):
         download_tiny_nerf_dataset(data_dir=self.root_dir)
         data = np.load(self.root_dir / "tiny_nerf_data.npz")
 
-        self.images = torch.tensor(data["images"])
-        self.poses = torch.tensor(data["poses"])
+        self.all_images = torch.tensor(data["images"])
+        self.all_poses = torch.tensor(data["poses"])
         self.focal = torch.tensor(data["focal"])
         self.N_train = 100
         self.N = N
@@ -26,11 +26,15 @@ class TinyNeRFDataset(Dataset):
         self.W = W
 
         if mode == "train":
-            self.images = self.images[: self.N_train]
-            self.poses = self.poses[: self.N_train]
+            self.images = self.all_images[: self.N_train]
+            self.poses = self.all_poses[: self.N_train]
         else:
-            self.images = self.images[self.N_train :]
-            self.poses = self.poses[self.N_train :]
+            self.images = self.all_images[self.N_train :]
+            self.poses = self.all_poses[self.N_train :]
+
+        if mode == "render":
+            self.images = self.all_images
+            self.poses = self.all_poses
 
     def __len__(self):
         return len(self.images)

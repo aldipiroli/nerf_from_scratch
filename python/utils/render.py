@@ -7,6 +7,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from dataset.download_dataset import download_tiny_nerf_dataset
+from utils.misc import plot_images
 
 
 def get_sphere_points(center=(0, 0, 0), radius=1, n=20):
@@ -275,6 +276,42 @@ def get_volume_rendering(color, density, step=0.1):
     predicted_ray_colors = torch.stack(predicted_ray_colors)
     predicted_ray_colors = torch.sum(predicted_ray_colors, dim=0)
     return predicted_ray_colors
+
+
+def generate_spherical_camera_poses(radius=4.0, num_views=60):
+    poses = []
+    for theta in np.linspace(0, 2 * np.pi, num_views):
+        cam_origin = np.array([radius * np.sin(theta), 0, radius * np.cos(theta)])
+
+        center = np.array([0, 0, 0])
+        up = np.array([1, 0, 0])
+
+        forward = center - cam_origin
+        forward /= np.linalg.norm(forward)
+        right = np.cross(up, forward)
+        right /= np.linalg.norm(right)
+        up_corrected = np.cross(forward, right)
+
+        c2w = np.eye(4)
+        c2w[:3, 0] = right
+        c2w[:3, 1] = up_corrected
+        c2w[:3, 2] = forward
+        c2w[:3, 3] = cam_origin
+
+        poses.append(c2w)
+    poses = torch.tensor(poses).float()
+    return poses
+
+
+def reconstruct_object(data_loader, model, device, step, artifacts_folder):
+    for i, (query_points, image_gt_colors) in enumerate(data_loader):
+        query_points = query_points.to(device)
+        image_gt_colors = image_gt_colors.to(device)
+        preds_color, preds_density = model(query_points)
+        predicted_ray_colors = get_volume_rendering(preds_color, preds_density, step=step)
+        pred = predicted_ray_colors[0].reshape(100, 100, 3)
+        gt = image_gt_colors[0].reshape(100, 100, 3)
+        plot_images([pred, gt], filename=f"{artifacts_folder}/reconstruction_img_{str(i).zfill(3)}.png")
 
 
 if __name__ == "__main__":
