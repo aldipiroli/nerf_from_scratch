@@ -12,8 +12,7 @@ cd python
 python train.py
 ```
 ### Examples
-#### Ray queries
-![](imgs/ray_sampling.png)
+Rendering samples from novel views over approximately ~10k iterations.
+![](imgs/output_sample.gif)
 
-
-> Note: this repository is just for learning purposes and does not aim at the performance of the [original repository](https://github.com/bmild/nerf). Additionally, some features from the original model are not implemented.
+> Note: this repository is just for learning purposes and does not aim at the performance of the [original repository](https://github.com/bmild/nerf). Additionally, some features from the original model are not implemented (i.e., hierarchical volume sampling).
